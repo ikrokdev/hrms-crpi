@@ -168,7 +168,7 @@
    "fieldtype": "Select",
    "label": "Set the frequency for holiday reminders",
    "mandatory_depends_on": "send_holiday_reminders",
-   "options": "Weekly\nMonthly"
+   "options": "Weekly\nMonthly\nProgressive"
   },
   {
    "default": "1",
