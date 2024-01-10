@@ -31,6 +31,16 @@ def send_reminders_in_advance_monthly():
 	send_advance_holiday_reminders("Monthly")
 
 
+@frappe.whitelist()
+def send_reminders_in_advance_progressive():
+        to_send_in_advance = int(frappe.db.get_single_value("HR Settings", "send_holiday_reminders"))
+        frequency = frappe.db.get_single_value("HR Settings", "frequency")
+        if not (to_send_in_advance and frequency == "Progressive"):
+                return
+
+        send_advance_progressive_holiday_reminders("Progressive")
+
+
 def send_advance_holiday_reminders(frequency):
 	"""Send Holiday Reminders in Advance to Employees
 	`frequency` (str): 'Weekly' or 'Monthly'
@@ -52,6 +62,37 @@ def send_advance_holiday_reminders(frequency):
 		)
 
 		send_holidays_reminder_in_advance(employee, holidays)
+
+
+def send_advance_progressive_holiday_reminders(frequency):
+	frequencies = []
+	if frequency == "Progressive":
+
+		start_date = getdate()
+		#Monthly
+		end_date = add_months(getdate(), 1)
+		frequencies.append([start_date, end_date])
+
+		#Two weeks
+		end_date = add_days(getdate(), 14)
+		frequencies.append([start_date, end_date])
+
+		#Three days
+		end_date = add_days(getdate(), 3)
+		frequencies.append([start_date, end_date])
+
+	else:
+		return
+
+	employees = frappe.db.get_all("Employee", filters={"status": "Active"}, pluck="name")
+
+	for pair in frequencies:
+		for employee in employees:
+			holidays = get_holidays_for_employee(
+				employee, pair[0], pair[1], only_non_weekly=True, raise_exception=False
+			)
+
+			send_holidays_reminder_in_advance(employee, holidays)
 
 
 def send_holidays_reminder_in_advance(employee, holidays):
