@@ -1,0 +1,26 @@
+<div>
+    <span>{{ reminder_text }}</span>
+</div>
+
+{% if advance_holiday_reminder %}
+    {% if next_week_holidays | len > 0 %}
+    <span>{{ next_week_message }}</span>
+    <ol>
+        {% for holiday in next_week_holidays %}
+            <li>{{ frappe.format(holiday.holiday_date, 'Date') }} - {{ holiday.description }}</li>
+        {% endfor %}
+    </ol>
+    {% else %}
+    <p>You have no holidays next week.</p>
+    {% endif %}
+    {% if holidays_upcoming | len > 0 %}
+    <span>{{ upcoming_message }}</span>
+    <ol>
+        {% for holiday in holidays_upcoming %}
+            <li>{{ frappe.format(holiday.holiday_date, 'Date') }} - {{ holiday.description }}</li>
+        {% endfor %}
+    </ol>
+    {% else %}
+    <p>You have no upcoming holidays.</p>
+    {% endif %}
+{% endif %}

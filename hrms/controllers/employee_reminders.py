@@ -33,12 +33,12 @@ def send_reminders_in_advance_monthly():
 
 @frappe.whitelist()
 def send_reminders_in_advance_progressive():
-        to_send_in_advance = int(frappe.db.get_single_value("HR Settings", "send_holiday_reminders"))
-        frequency = frappe.db.get_single_value("HR Settings", "frequency")
-        if not (to_send_in_advance and frequency == "Progressive"):
-                return
+	to_send_in_advance = int(frappe.db.get_single_value("HR Settings", "send_holiday_reminders"))
+	frequency = frappe.db.get_single_value("HR Settings", "frequency")
+	if not (to_send_in_advance and frequency == "Progressive"):
+			return
 
-        send_advance_progressive_holiday_reminders("Progressive")
+	send_advance_progressive_holiday_reminders("Progressive")
 
 
 def send_advance_holiday_reminders(frequency):
@@ -64,9 +64,10 @@ def send_advance_holiday_reminders(frequency):
 		send_holidays_reminder_in_advance(employee, holidays)
 
 
+@frappe.whitelist()
 def send_advance_progressive_holiday_reminders(frequency):
 	frequencies = []
-	if frequency == "Progressive":
+	'''if frequency == "Progressive":
 
 		start_date = getdate()
 		#Monthly
@@ -87,13 +88,43 @@ def send_advance_progressive_holiday_reminders(frequency):
 	employees = frappe.db.get_all("Employee", filters={"status": "Active"}, pluck="name")
 
 	for pair in frequencies:
+		print(f"pair: {pair}")
 		for employee in employees:
 			holidays = get_holidays_for_employee(
 				employee, pair[0], pair[1], only_non_weekly=True, raise_exception=False
 			)
+			print(f"holidays: {holidays}")
 
-			send_holidays_reminder_in_advance(employee, holidays)
 
+			send_holidays_reminder_in_advance(employee, holidays)'''
+	
+	frequencies = []
+	if frequency == "Progressive":
+		
+		start_date = add_days(getdate(), 3)
+		upcoming_start_date = add_days(start_date, 7)
+
+		# Next Week
+		end_date = add_days(start_date, 7)
+		frequencies.append([start_date, end_date])
+
+		# Upcoming
+		end_date = add_days(upcoming_start_date, 21)
+		frequencies.append([upcoming_start_date, end_date])
+
+	else:
+		return
+
+	employees = frappe.db.get_all("Employee", filters={"status": "Active"}, pluck="name")
+	
+	for employee in employees:
+		holidays_next_week = get_holidays_for_employee(employee, frequencies[0][0], frequencies[0][1], only_non_weekly=True, raise_exception=False)
+		upcoming_holidays = get_holidays_for_employee(employee, frequencies[1][0], frequencies[1][1], only_non_weekly=True, raise_exception=False)
+
+		print(f"holidays_next_week: {holidays_next_week}")
+		print(f"upcoming_holidays: {upcoming_holidays}")
+
+		send_progressive_holidays_reminder_in_advance(employee, holidays_next_week, upcoming_holidays)
 
 def send_holidays_reminder_in_advance(employee, holidays):
 	if not holidays:
@@ -103,7 +134,14 @@ def send_holidays_reminder_in_advance(employee, holidays):
 	employee_email = get_employee_email(employee_doc)
 	frequency = frappe.db.get_single_value("HR Settings", "frequency")
 	sender_email = get_sender_email()
-	email_header = _("Holidays this Month.") if frequency == "Monthly" else _("Holidays this Week.")
+	# email_header = _("Holidays this Month.") if frequency == "Monthly" else _("Holidays this Week.")
+	if frequency == "Monthly":
+		email_header = _("Holidays this Month")
+	elif frequency == "Weekly":
+		email_header = _("Holidays this Week")
+	else:
+		email_header = _("Holidays Reminder")
+
 	frappe.sendmail(
 		sender=sender_email,
 		recipients=[employee_email],
@@ -122,6 +160,33 @@ def send_holidays_reminder_in_advance(employee, holidays):
 	)
 
 
+def send_progressive_holidays_reminder_in_advance(employee, holidays_next_week, upcoming_holidays):
+	if not holidays_next_week and not upcoming_holidays:
+		print("Bad((")
+		return
+	
+	employee_doc = frappe.get_doc("Employee", employee)
+	employee_email = get_employee_email(employee_doc)
+	sender_email = get_sender_email()
+	email_header = _("Holidays Reminder")
+
+	frappe.sendmail(
+		sender=sender_email,
+		recipients=[employee_email],
+		subject=_("Upcoming Holidays Reminder"),
+		template="progressive_holiday_reminder",
+		args=dict(
+			reminder_text=_("Hey {}! This email is to remind you about the upcoming holidays.").format(
+				employee_doc.get("first_name")
+			),
+			next_week_message=_("Below is the list of next week holidays for you:"),
+			upcoming_message =_("Below is the list of upcoming holidays for you:"),
+			advance_holiday_reminder=True,
+			next_week_holidays=holidays_next_week,
+			holidays_upcoming=upcoming_holidays
+		),
+		header=email_header
+	)
 # ------------------
 # BIRTHDAY REMINDERS
 # ------------------
