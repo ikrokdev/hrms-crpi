@@ -67,38 +67,6 @@ def send_advance_holiday_reminders(frequency):
 @frappe.whitelist()
 def send_advance_progressive_holiday_reminders(frequency):
 	frequencies = []
-	'''if frequency == "Progressive":
-
-		start_date = getdate()
-		#Monthly
-		end_date = add_months(getdate(), 1)
-		frequencies.append([start_date, end_date])
-
-		#Two weeks
-		end_date = add_days(getdate(), 14)
-		frequencies.append([start_date, end_date])
-
-		#Three days
-		end_date = add_days(getdate(), 3)
-		frequencies.append([start_date, end_date])
-
-	else:
-		return
-
-	employees = frappe.db.get_all("Employee", filters={"status": "Active"}, pluck="name")
-
-	for pair in frequencies:
-		print(f"pair: {pair}")
-		for employee in employees:
-			holidays = get_holidays_for_employee(
-				employee, pair[0], pair[1], only_non_weekly=True, raise_exception=False
-			)
-			print(f"holidays: {holidays}")
-
-
-			send_holidays_reminder_in_advance(employee, holidays)'''
-	
-	frequencies = []
 	if frequency == "Progressive":
 		
 		start_date = add_days(getdate(), 3)
@@ -120,9 +88,6 @@ def send_advance_progressive_holiday_reminders(frequency):
 	for employee in employees:
 		holidays_next_week = get_holidays_for_employee(employee, frequencies[0][0], frequencies[0][1], only_non_weekly=True, raise_exception=False)
 		upcoming_holidays = get_holidays_for_employee(employee, frequencies[1][0], frequencies[1][1], only_non_weekly=True, raise_exception=False)
-
-		print(f"holidays_next_week: {holidays_next_week}")
-		print(f"upcoming_holidays: {upcoming_holidays}")
 
 		send_progressive_holidays_reminder_in_advance(employee, holidays_next_week, upcoming_holidays)
 
