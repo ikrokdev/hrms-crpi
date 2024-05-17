@@ -127,7 +127,6 @@ def send_holidays_reminder_in_advance(employee, holidays):
 
 def send_progressive_holidays_reminder_in_advance(employee, holidays_next_week, upcoming_holidays):
 	if not holidays_next_week and not upcoming_holidays:
-		print("Bad((")
 		return
 	
 	employee_doc = frappe.get_doc("Employee", employee)
